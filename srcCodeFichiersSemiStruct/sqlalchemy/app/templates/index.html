@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Liste des étudiants (Alchemy)</title>
+    <style>table{border-collapse:collapse}td,th{padding:6px;border:1px solid #ccc}</style>
+</head>
+<body>
+
+<h2>Liste des étudiants</h2>
+
+<a href="{{ url_for('new_etudiant') }}">➕ Ajouter un nouvel étudiant</a>
+
+<br><br>
+
+<table>
+    <tr>
+        <th>Nom</th>
+        <th>Adresse</th>
+        <th>PIN</th>
+        <th>Action</th>
+    </tr>
+
+    {% for e in etudiants %}
+    <tr>
+        <td>{{ e.nom }}</td>
+        <td>{{ e.addr }}</td>
+        <td>{{ e.pin }}</td>
+        <td>
+            <a href="{{ url_for('edit_etudiant', id=e.id) }}">Modifier</a>
+            <form method="POST" action="{{ url_for('delete_etudiant', id=e.id) }}" style="display:inline">
+                <button type="submit" onclick="return confirm('Supprimer cet étudiant ?')">Supprimer</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>
+ 

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{% if etudiant %}Modifier{% else %}Ajouter{% endif %} un étudiant</title>
+    <style>label{display:block;margin-top:8px}</style>
+</head>
+<body>
+
+<h3>{% if etudiant %}Modifier{% else %}Ajouter{% endif %} un étudiant</h3>
+
+{% if etudiant %}
+<form method="POST" action="{{ url_for('edit_etudiant', id=etudiant.id) }}">
+{% else %}
+<form method="POST" action="{{ url_for('add_etudiant') }}">
+{% endif %}
+
+    <label>Nom</label>
+    <input type="text" name="nom" required value="{{ etudiant.nom if etudiant }}"><br>
+
+    <label>Adresse</label>
+    <textarea name="addr" rows="3" cols="30">{{ etudiant.addr if etudiant }}</textarea><br>
+
+    <label>PINCODE</label>
+    <input type="text" name="pin" value="{{ etudiant.pin if etudiant }}"/><br>
+
+    {% if not etudiant %}
+    <p>Vous devez être connecté pour ajouter un étudiant. <a href="{{ url_for('login') }}">Se connecter</a></p>
+    {% endif %}
+
+    <br>
+    <input type="submit" value="{{ 'Modifier' if etudiant else 'Ajouter l\'étudiant' }}"/>
+</form>
+
+</body>
+</html>
