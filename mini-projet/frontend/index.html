@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Microservices Dashboard</title>
+
+<style>
+body{font-family:Verdana;background:#eef2f7;padding:30px}
+.card{background:white;padding:20px;border-radius:10px;margin-bottom:20px;box-shadow:0 0 8px #bbb}
+input,button{padding:8px;margin:5px;font-size:14px}
+.success{color:green;font-weight:bold}
+.error{color:red;font-weight:bold}
+ul{padding-left:20px}
+pre{background:#f0f0f0;padding:10px;border-radius:6px}
+</style>
+
+</head>
+<body>
+
+<h1>🔧 Tableau Microservices</h1>
+
+<!-- PERSONNES -->
+<div class="card">
+<h2>👥 Liste des personnes</h2>
+<button onclick="fetchPersons()">🔄 Actualiser</button>
+<ul id="persons"></ul>
+</div>
+
+<!-- LOGIN -->
+<div class="card">
+<h2>🔐 Connexion</h2>
+<input id="uName" placeholder="Utilisateur"><br>
+<input id="uPass" type="password" placeholder="Mot de passe"><br>
+<button onclick="doLogin()">Se connecter</button>
+<p id="loginMsg"></p>
+</div>
+
+<!-- CREATE -->
+<div class="card">
+<h2>➕ Nouvelle personne</h2>
+<input id="pName" placeholder="Nom"><br>
+<button onclick="addPerson()">Créer</button>
+<p id="addMsg"></p>
+</div>
+
+<!-- DELETE -->
+<div class="card">
+<h2>🗑️ Supprimer une personne</h2>
+<input id="pDelId" placeholder="ID"><br>
+<button onclick="removePerson()">Supprimer</button>
+<p id="delMsg"></p>
+</div>
+
+<!-- HEALTH -->
+<div class="card">
+<h2>❤️ Dossier santé</h2>
+<input id="hId" placeholder="ID personne"><br>
+<input id="hWeight" placeholder="Poids"><br>
+<input id="hHeight" placeholder="Taille"><br>
+<input id="hRate" placeholder="Pouls"><br>
+<input id="hPress" placeholder="Tension"><br>
+
+<button onclick="saveHealth()">💾 Enregistrer</button>
+<button onclick="viewHealth()">📖 Voir</button>
+
+<pre id="healthBox"></pre>
+</div>
+
+<script>
+let TOKEN = "";
+
+// Helper API
+function api(url, method="GET", body=null, auth=true){
+  const opts = {method, headers:{ "Content-Type":"application/json" }};
+  if(body) opts.body = JSON.stringify(body);
+  if(auth && TOKEN) opts.headers["Authorization"] = "Bearer "+TOKEN;
+
+  return fetch(url, opts).then(async r=>{
+    const txt = await r.text();
+    if(!txt) return {};
+    try{ return JSON.parse(txt); } catch(e){ return txt; }
+  });
+}
+
+// ------------------------
+// Connexion
+// ------------------------
+function doLogin(){
+  api("http://auth:5003/auth","POST",{
+    username: uName.value,
+    password: uPass.value
+  }, false).then(d=>{
+    if(d.token){
+      TOKEN = d.token;
+      loginMsg.textContent="Connecté ✔️";
+      loginMsg.className="success";
+      fetchPersons();
+    } else {
+      loginMsg.textContent="Erreur réseau / identifiants ❌";
+      loginMsg.className="error";
+    }
+  }).catch(()=>{
+    loginMsg.textContent="Erreur réseau";
+    loginMsg.className="error";
+  });
+}
+
+// ------------------------
+// Liste des personnes
+// ------------------------
+function fetchPersons(){
+  api("http://person:5001/persons","GET",null,false).then(async persons=>{
+    personsElem = document.getElementById("persons");
+    personsElem.innerHTML = "";
+
+    for(const p of persons){
+      let li = document.createElement("li");
+      li.textContent = `${p.id} - ${p.name}`;
+
+      if(TOKEN){
+        try{
+          const h = await api(`http://health:5002/health/${p.id}`);
+          const weight = h.weight ?? h.weight_kg ?? null;
+          const height = h.height ?? h.height_cm ?? null;
+          const hr = h.heart_rate ?? h.heart_rate_bpm ?? null;
+          const bp = h.blood_pressure ?? null;
+
+          if(weight || height || hr || bp){
+            li.textContent += ` | Santé: ${weight ?? '-'}kg, ${height ?? '-'}cm, FC:${hr ?? '-'}, TA:${bp ?? '-'}`;
+          } else {
+            li.textContent += " | Aucune donnée santé";
+          }
+        } catch(err){
+          li.textContent += " | Aucune donnée santé";
+        }
+      }
+      personsElem.appendChild(li);
+    }
+  });
+}
+
+// ------------------------
+// Ajouter personne
+// ------------------------
+function addPerson(){
+  if(!TOKEN){ addMsg.textContent="Connectez-vous"; addMsg.className="error"; return; }
+
+  api("http://person:5001/persons","POST",{name:pName.value})
+    .then(d=>addMsg.textContent=JSON.stringify(d,null,2))
+    .then(fetchPersons);
+}
+
+// ------------------------
+// Supprimer personne
+// ------------------------
+function removePerson(){
+  if(!TOKEN){ delMsg.textContent="Connectez-vous"; delMsg.className="error"; return; }
+
+  api("http://person:5001/persons/"+pDelId.value,"DELETE")
+    .then(d=>delMsg.textContent=JSON.stringify(d,null,2))
+    .then(fetchPersons);
+}
+
+// ------------------------
+// Santé
+// ------------------------
+function saveHealth(){
+  if(!TOKEN){ healthBox.textContent="Connectez-vous"; return; }
+
+  api("http://health:5002/health/"+hId.value,"POST",{
+    weight: hWeight.value,
+    height: hHeight.value,
+    heart_rate: hRate.value,
+    blood_pressure: hPress.value
+  }).then(d=>{
+    healthBox.textContent = JSON.stringify(d,null,2);
+    fetchPersons();
+  });
+}
+
+function viewHealth(){
+  if(!TOKEN){ healthBox.textContent="Connectez-vous"; return; }
+
+  api("http://health:5002/health/"+hId.value)
+    .then(d=>healthBox.textContent=JSON.stringify(d,null,2));
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+
+  auth:
+    build: ./auth-service
+    ports:
+      - "5003:5003"
+
+  person:
+    build: ./person-service
+    environment:
+      AUTH_SERVICE_URL: http://auth:5003
+    ports:
+      - "5001:5001"
+    depends_on:
+      - auth
+
+  health:
+    build: ./health-service
+    environment:
+      PERSON_SERVICE_URL: http://person:5001
+      AUTH_SERVICE_URL: http://auth:5003
+    ports:
+      - "5002:5002"
+    depends_on:
+      - auth
+      - person
+
+  frontend:
+    image: nginx:alpine
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    ports:
+      - "8080:80"

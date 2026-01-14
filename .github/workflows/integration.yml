@@ -1,0 +1,44 @@
+name: Integration tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Compose (if needed)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose-plugin
+
+      - name: Build & start services
+        run: |
+          cd mini-projet
+          docker compose up -d --build
+
+      - name: Wait for services
+        run: |
+          for i in {1..60}; do
+            if curl -sSf http://127.0.0.1:5003/auth >/dev/null 2>&1 && curl -sSf http://127.0.0.1:5001/persons >/dev/null 2>&1; then
+              echo "Services are up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Timeout waiting for services" && exit 1
+
+      - name: Run tests
+        run: |
+          python -m pip install -r tests/requirements.txt
+          pytest -q tests/
+
+      - name: Tear down
+        if: always()
+        run: |
+          cd mini-projet
+          docker compose down --volumes --remove-orphans
