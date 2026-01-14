@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{% if etudiant %}Modifier{% else %}Nouveau{% endif %} étudiant</title>
+</head>
+<body>
+<h3>{% if etudiant %}Modifier{% else %}Nouveau{% endif %} étudiant</h3>
+
+<form method="POST">
+    Nom<br>
+    <input type="text" name="nom" value="{{ etudiant[1] if etudiant else '' }}" {% if etudiant %}readonly{% endif %}/><br><br>
+
+    Adresse<br>
+    <textarea name="addr" rows="3" cols="30">{{ etudiant[2] if etudiant else '' }}</textarea><br><br>
+
+    PINCODE<br>
+    <input type="text" name="pin" value="{{ etudiant[3] if etudiant else '' }}"/><br><br>
+
+    <input type="submit" value="Envoyer"/>
+</form>
+
+</body>
+</html>

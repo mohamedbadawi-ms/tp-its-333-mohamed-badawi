@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Liste des étudiants</title>
+</head>
+<body>
+
+<h2>Liste des étudiants</h2>
+
+<a href="{{ url_for('new_etudiant') }}">➕ Ajouter un nouvel étudiant</a>
+
+<br><br>
+
+<table border="1">
+    <tr>
+        <th>Nom</th>
+        <th>Adresse</th>
+        <th>PIN</th>
+        <th>Action</th>
+    </tr>
+
+    {% for e in etudiants %}
+    <tr>
+        <td>{{ e[1] }}</td>
+        <td>{{ e[2] }}</td>
+        <td>{{ e[3] }}</td>
+        <td>
+            <a href="{{ url_for('edit_etudiant', id=e[0]) }}">Modifier</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>
